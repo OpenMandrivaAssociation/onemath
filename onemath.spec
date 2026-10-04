@@ -16,12 +16,11 @@ Source1:	https://github.com/uxlfoundation/generic-sycl-components/archive/%{gsyc
 Source2:	MKLConfig.cmake
 Patch0:		0001-mkl-namespace-alias.patch
 
-# Built with icpx, which is x86_64 only.
-
 BuildRequires:	cmake
 BuildRequires:	ninja
 BuildRequires:	intel-llvm
 BuildRequires:	pkgconfig(level-zero) >= 1.32.0
+BuildRequires:	opencl-headers
 
 %description
 oneMath is the open-source SYCL math library from the UXL Foundation.
@@ -75,7 +74,8 @@ find . -name CMakeLists.txt -print0 | xargs -0 sed -i \
 %build
 # icpx device compilation rejects the distro -flto and -march flags.
 _flags=$(printf '%s' "%{optflags}" | sed -E 's/-flto//g; s/-g3//g; s/-gdwarf-4//g; s/-mfpmath=[^ ]+//g; s/ -m[a-z0-9+.=]+//g')
-_flags="$_flags -g0"
+# icpx does not search /usr/include, and its sycl headers include CL/cl.h.
+_flags="$_flags -g0 -I%{_includedir}"
 _ldflags=$(printf '%s' "%{build_ldflags}" | sed -E 's/-flto//g; s/-mfpmath=[^ ]+//g; s/ -m[a-z0-9+.=]+//g')
 export CFLAGS="$_flags"
 export CXXFLAGS="$_flags"
@@ -101,6 +101,12 @@ ninja -v
 DESTDIR=%{buildroot} ninja -C build install
 mkdir -p %{buildroot}%{_libdir}/cmake/MKL
 install -pm 644 %{SOURCE2} %{buildroot}%{_libdir}/cmake/MKL/MKLConfig.cmake
+# Cooker has no cmake(SYCL) package. FindCompiler.cmake is the fallback
+# that spots icpx, and installing it satisfies the cmake(Compiler) require.
+sed -i '/find_package(SYCL QUIET)/,+3c find_package(Compiler REQUIRED)' \
+	%{buildroot}%{_libdir}/cmake/oneMath/oneMathConfig.cmake
+install -pm 644 cmake/FindCompiler.cmake \
+	%{buildroot}%{_libdir}/cmake/oneMath/FindCompiler.cmake
 
 %files -n %{libname}
 %license LICENSE
