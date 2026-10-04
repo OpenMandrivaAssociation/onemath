@@ -17,7 +17,6 @@ Source2:	MKLConfig.cmake
 Patch0:		0001-mkl-namespace-alias.patch
 
 # Built with icpx, which is x86_64 only.
-ExclusiveArch:	x86_64 znver1
 
 BuildRequires:	cmake
 BuildRequires:	ninja
