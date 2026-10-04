@@ -1,4 +1,5 @@
 %global _disable_lto 1
+%global debug_package %{nil}
 %global gsycl_commit 99241128f64b700392e4cfdd047caada024bf7dd
 
 %define libname %mklibname onemath
